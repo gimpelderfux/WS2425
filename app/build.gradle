@@ -51,6 +51,8 @@ dependencies {
 
     implementation 'com.hivemq:hivemq-mqtt-client:1.3.0'
 
+    implementation files('libs/org.gtfs.reader.jar')
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
