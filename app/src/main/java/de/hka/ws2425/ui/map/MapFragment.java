@@ -28,6 +28,7 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
