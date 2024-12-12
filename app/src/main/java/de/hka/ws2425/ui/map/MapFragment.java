@@ -28,6 +28,9 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
+import org.gtfs.reader.GtfsReader;
+import org.gtfs.reader.GtfsDaoBase;
+import org.gtfs.reader.GtfsSimpleDao;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

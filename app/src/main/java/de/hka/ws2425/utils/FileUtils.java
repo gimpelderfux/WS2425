@@ -1,38 +1,66 @@
 package de.hka.ws2425.utils;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class FileUtils {
 
-    /**
-     * Kopiert eine Datei aus dem assets-Ordner in den internen App-Speicher.
-     *
-     * @param context       Der Kontext der Anwendung.
-     * @param assetFileName Der Name der Datei im assets-Ordner.
-     * @return Ein File-Objekt, das die Datei im internen Speicher repräsentiert.
-     */
-    public static File copyAssetToInternalStorage(Context context, String assetFileName) {
-        File outputFile = new File(context.getFilesDir(), assetFileName);
-        if (outputFile.exists()) {
-            return outputFile; // Datei existiert bereits
-        }
+    String toPath = "/data/data/" + getPackageName();  // Your application path
 
-        try (InputStream inputStream = context.getAssets().open(assetFileName);
-             FileOutputStream outputStream = new FileOutputStream(outputFile)) {
 
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = inputStream.read(buffer)) > 0) {
-                outputStream.write(buffer, 0, length);
-            }
+    private static boolean copyAssetFolder(AssetManager assetManager,
+                                           String fromAssetPath, String toPath) {
+        try {
+            String[] files = assetManager.list(fromAssetPath);
+            new File(toPath).mkdirs();
+            boolean res = true;
+            for (String file : files)
+                if (file.contains("."))
+                    res &= copyAsset(assetManager,
+                            fromAssetPath + "/" + file,
+                            toPath + "/" + file);
+                else
+                    res &= copyAssetFolder(assetManager,
+                            fromAssetPath + "/" + file,
+                            toPath + "/" + file);
+            return res;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
+    }
 
-        return outputFile;
+    private static boolean copyAsset(AssetManager assetManager,
+                                     String fromAssetPath, String toPath) {
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            in = assetManager.open(fromAssetPath);
+            new File(toPath).createNewFile();
+            out = new FileOutputStream(toPath);
+            copyFile(in, out);
+            in.close();
+            in = null;
+            out.flush();
+            out.close();
+            out = null;
+            return true;
+        } catch(Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while((read = in.read(buffer)) != -1){
+            out.write(buffer, 0, read);
+        }
     }
 }
