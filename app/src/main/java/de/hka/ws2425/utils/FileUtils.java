@@ -1,4 +1,4 @@
-package de.hka.ws2425.utils;
+/*package de.hka.ws2425.utils;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -64,3 +64,4 @@ public class FileUtils {
         }
     }
 }
+*/
