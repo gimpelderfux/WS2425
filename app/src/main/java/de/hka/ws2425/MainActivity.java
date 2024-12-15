@@ -1,12 +1,10 @@
 package de.hka.ws2425;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
 
 import org.gtfs.reader.GtfsReader;
-import org.gtfs.reader.GtfsDaoBase;
 import org.gtfs.reader.GtfsSimpleDao;
 
 import java.io.File;
@@ -14,8 +12,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import de.hka.ws2425.ui.main.MainFragment; // Sicherstellen, dass dies korrekt importiert ist
+import de.hka.ws2425.ui.main.MainFragment;
+import de.hka.ws2425.utils.Stops;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -75,12 +76,33 @@ public class MainActivity extends AppCompatActivity {
             gtfsReader.setDataAccessObject(gtfsSimpleDao);
             gtfsReader.read(gtfsFile.getAbsolutePath());
 
-            // Beispiel: Agenturen aus der GTFS-Datei auslesen und loggen
-            gtfsSimpleDao.getAgencies().forEach(agency ->
-                    Log.d("GTFS", "Agentur: " + agency.getName())
-            );
+            // Beispiel: Haltestellen aus der GTFS-Datei auslesen
+            List<Stops> stopsList = new ArrayList<>();
+            gtfsSimpleDao.getStops().forEach(stop -> {
+                try {
+                    double latitude = Double.parseDouble(stop.getLatitude());
+                    double longitude = Double.parseDouble(stop.getLongitude());
+                    Stops newStop = new Stops(
+                            stop.getId(),
+                            stop.getName(),
+                            latitude,
+                            longitude
+                    );
+                    stopsList.add(newStop);
+                } catch (NumberFormatException e) {
+                    Log.e("GTFS", "Fehler beim Konvertieren von Koordinaten: " + e.getMessage());
+                }
+            });
+
+            // Übergabe der Stop-Liste an die Map-Ansicht
+            Bundle stopsDataBundle = new Bundle();
+            stopsDataBundle.putSerializable("stopsList", (ArrayList<Stops>) stopsList);
+            getSupportFragmentManager().setFragmentResult("stopsData", stopsDataBundle);
+
+            Log.d("GTFS", "Haltestellen erfolgreich geladen: " + stopsList.size());
         } catch (Exception e) {
             Log.e("MainActivity", "Fehler beim Lesen der GTFS-Datei: " + e.getMessage());
         }
     }
+
 }

@@ -34,14 +34,21 @@ import org.gtfs.reader.GtfsSimpleDao;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
 import de.hka.ws2425.R;
+
+import androidx.fragment.app.FragmentResultListener;
+import de.hka.ws2425.utils.Stops;
+import org.osmdroid.views.overlay.Marker;
 
 public class MapFragment extends Fragment {
 
     private MapViewModel mViewModel;
 
     private MapView mapView;
+
+    private List<Stops> stopsList = new ArrayList<>();
 
     public static MapFragment newInstance() {
         return new MapFragment();
@@ -54,6 +61,8 @@ public class MapFragment extends Fragment {
         // TODO: Use the ViewModel
     }
 
+
+    // Ergänze die Methode `onCreateView`:
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_map, container, false);
@@ -80,14 +89,37 @@ public class MapFragment extends Fragment {
 
         this.mapView.setTileSource(mapServer);
 
-        GeoPoint startPoint = new GeoPoint(49.0069, 8.4037);
+        GeoPoint startPoint = new GeoPoint(48.99958, 8.80337);
 
         IMapController mapController = this.mapView.getController();
         mapController.setZoom(14.0);
         mapController.setCenter(startPoint);
 
+        // Empfange Haltestellen-Daten von MainActivity:
+        getParentFragmentManager().setFragmentResultListener("stopsData", this, new FragmentResultListener() {
+            @Override
+            public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle result) {
+                stopsList = (List<Stops>) result.getSerializable("stopsList");
+                if (stopsList != null) {
+                    addStopsToMap();
+                }
+            }
+        });
+
         return root;
     }
+
+    // Neue Methode hinzufügen:
+    private void addStopsToMap() {
+        for (Stops stop : stopsList) {
+            Marker marker = new Marker(mapView);
+            marker.setPosition(new GeoPoint(stop.getLatitude(), stop.getLongitude()));
+            marker.setTitle(stop.getName());
+            mapView.getOverlays().add(marker);
+        }
+        mapView.invalidate();  // Karte aktualisieren
+    }
+
 
     @Override
     public void onResume() {
@@ -159,3 +191,4 @@ public class MapFragment extends Fragment {
         return "Basic " + Base64.encodeToString(authorizationString.getBytes(StandardCharsets.UTF_8), Base64.DEFAULT);
     }
 }
+
