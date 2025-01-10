@@ -1,4 +1,4 @@
-package de.hka.ws2425;
+package de.hka.ws2425.app;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,6 +11,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+
+import de.hka.ws2425.R;
 import de.hka.ws2425.ui.main.MainFragment;
 import de.hka.ws2425.ui.map.MapFragment; // Importiere MapFragment
 
@@ -97,3 +100,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+
+/*Verwendung von DepartureTimeSorter:
+import de.hka.ws2425.util.DepartureTimeSorter;
+import org.gtfs.reader.model.StopTime;
+List<StopTime> stopTimes = ...; // Deine Liste von StopTime Objekten
+        DepartureTimeSorter.sortStopTimesByDepartureTime(stopTimes);
+// Die Liste stopTimes ist nun sortiert*/

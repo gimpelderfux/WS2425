@@ -1,4 +1,4 @@
-package de.hka.ws2425;
+package de.hka.ws2425.app;
 
 import android.content.Context;
 import android.util.Log;
