@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -115,6 +119,29 @@ public class MapFragment extends Fragment {
             Marker marker = new Marker(mapView);
             marker.setPosition(new GeoPoint(stop.getLatitude(), stop.getLongitude()));
             marker.setTitle(stop.getName());
+            // Icon laden
+            Drawable icon = getResources().getDrawable(R.drawable.ic_bus_stop, null);
+
+            // Icon skalieren
+            int iconWidth = 30; // Gewünschte Breite in Pixeln
+            int iconHeight = 30; // Gewünschte Höhe in Pixeln
+            Bitmap bitmap;
+            if (icon instanceof BitmapDrawable) {
+                // Wenn es ein BitmapDrawable ist, extrahieren wir das Bitmap
+                bitmap = ((BitmapDrawable) icon).getBitmap();
+            } else {
+                // Wenn es kein BitmapDrawable ist, erstellen wir ein Bitmap daraus
+                bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                icon.draw(canvas);
+            }
+
+            Drawable scaledIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, iconWidth, iconHeight, true));
+
+            // Icon setzen
+            marker.setIcon(scaledIcon);
+
             mapView.getOverlays().add(marker);
         }
         mapView.invalidate();  // Karte aktualisieren
