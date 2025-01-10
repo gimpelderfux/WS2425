@@ -1,28 +1,25 @@
 package de.hka.ws2425;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
-
+import android.view.View;
+import android.widget.Button;
 import org.gtfs.reader.GtfsReader;
-import org.gtfs.reader.GtfsDaoBase;
 import org.gtfs.reader.GtfsSimpleDao;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import de.hka.ws2425.ui.main.MainFragment; // Sicherstellen, dass dies korrekt importiert ist
+import de.hka.ws2425.ui.main.MainFragment;
+import de.hka.ws2425.ui.map.MapFragment; // Importiere MapFragment
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
         if (savedInstanceState == null) {
@@ -33,13 +30,31 @@ public class MainActivity extends AppCompatActivity {
 
         // Lade GTFS-Datei in den internen Speicher und lese sie anschließend aus
         loadAndReadGtfsData();
+
+        // Füge den Zurück-zur-Karte-Button hinzu
+        setupMapButton();
     }
 
+    private void setupMapButton() {
+        Button btnGoToMap = findViewById(R.id.btn_go_to_map);
+        if (btnGoToMap != null) {
+            btnGoToMap.setOnClickListener(v -> {
+                // Ersetze das aktuelle Fragment durch das MapFragment
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.container, new MapFragment())
+                        .addToBackStack(null) // Füge zur Backstack hinzu, um zurück navigieren zu können
+                        .commit();
+            });
+        } else {
+            Log.e("MainActivity", "Button btn_go_to_map nicht gefunden!");
+        }
+    }
+
+
     private void loadAndReadGtfsData() {
-        String assetFileName = "gtfs-hka-s24.zip";  // Name der Datei in den Assets
+        String assetFileName = "gtfs-hka-s24.zip";
         File destinationFile = new File(this.getApplication().getFilesDir(), assetFileName);
 
-        // Kopiere die Datei aus den Assets in den internen Speicher
         if (!destinationFile.exists()) {
             boolean success = copyAssetToInternalStorage(assetFileName, destinationFile);
             if (!success) {
@@ -48,20 +63,20 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Lese die GTFS-Datei mit der Bibliothek
         readGtfsData(destinationFile);
     }
 
     private boolean copyAssetToInternalStorage(String assetFileName, File destinationFile) {
-        try (InputStream in = getAssets().open(assetFileName);
-             OutputStream out = new FileOutputStream(destinationFile)) {
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
+        try (InputStream in = getAssets().open(assetFileName)) {
+            try (OutputStream out = new FileOutputStream(destinationFile)) {
+                byte[] buffer = new byte[1024];
+                int read;
+                while ((read = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
+                Log.d("MainActivity", "GTFS-Datei erfolgreich in den internen Speicher kopiert.");
+                return true;
             }
-            Log.d("MainActivity", "GTFS-Datei erfolgreich in den internen Speicher kopiert.");
-            return true;
         } catch (IOException e) {
             Log.e("MainActivity", "Fehler beim Kopieren der Datei: " + e.getMessage());
             return false;
@@ -75,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
             gtfsReader.setDataAccessObject(gtfsSimpleDao);
             gtfsReader.read(gtfsFile.getAbsolutePath());
 
-            // Beispiel: Agenturen aus der GTFS-Datei auslesen und loggen
             gtfsSimpleDao.getAgencies().forEach(agency ->
                     Log.d("GTFS", "Agentur: " + agency.getName())
             );
