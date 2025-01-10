@@ -3,7 +3,6 @@ package de.hka.ws2425;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import org.gtfs.reader.GtfsReader;
 import org.gtfs.reader.GtfsSimpleDao;
