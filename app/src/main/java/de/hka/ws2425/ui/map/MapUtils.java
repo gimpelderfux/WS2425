@@ -1,17 +1,20 @@
 package de.hka.ws2425.ui.map;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
+import de.hka.ws2425.R;
 import de.hka.ws2425.utils.CalendarDate;
 import de.hka.ws2425.utils.GtfsData;
 import de.hka.ws2425.utils.StopTimes;
@@ -24,24 +27,52 @@ public class MapUtils {
             if (stop.getId().endsWith("_Parent")) {
                 continue;
             }
+
             Marker marker = new Marker(mapView);
             marker.setPosition(new GeoPoint(stop.getLatitude(), stop.getLongitude()));
             marker.setTitle(stop.getName());
-            marker.setSubDescription("ID: " + stop.getId());
+
+            // Icon laden
+            Drawable icon = mapView.getContext().getResources().getDrawable(R.drawable.ic_bus_stop, null);
+
+            // Icon skalieren
+            int iconWidth = 30; // Gewünschte Breite in Pixeln
+            int iconHeight = 30; // Gewünschte Höhe in Pixeln
+            Bitmap bitmap;
+            if (icon instanceof BitmapDrawable) {
+                // Wenn es ein BitmapDrawable ist, extrahiere das Bitmap
+                bitmap = ((BitmapDrawable) icon).getBitmap();
+            } else {
+                // Wenn es kein BitmapDrawable ist, erstelle ein Bitmap daraus
+                bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                icon.draw(canvas);
+            }
+
+            // Skaliertes Icon erstellen
+            Drawable scaledIcon = new BitmapDrawable(mapView.getContext().getResources(), Bitmap.createScaledBitmap(bitmap, iconWidth, iconHeight, true));
+
+            // Icon setzen
+            marker.setIcon(scaledIcon);
+
+            // Klick-Listener hinzufügen
             marker.setOnMarkerClickListener((m, map) -> {
                 listener.onMarkerClick(m, stop);
                 return true;
             });
+
+            // Marker zur Karte hinzufügen
             mapView.getOverlays().add(marker);
         }
-        mapView.invalidate();
+        mapView.invalidate(); // Karte aktualisieren
     }
 
     public static List<String> getDeparturesForStop(GtfsData gtfsData, String stopId) {
         List<String> departures = new ArrayList<>();
 
         // 1. Ermittle den aktuellen Betriebstag (im Format YYYYMMDD)
-        String currentDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+        String currentDate = new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(new java.util.Date());
 
         // 2. Finde alle gültigen Service-IDs für den aktuellen Tag
         Set<String> validServiceIds = new HashSet<>();
