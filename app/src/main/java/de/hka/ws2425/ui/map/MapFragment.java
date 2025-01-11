@@ -1,8 +1,3 @@
-/*
- * Icon Attributierung:
- * <a href="https://www.flaticon.com/free-icons/bus-stop" title="bus stop icons">Bus stop icons created by mavadee - Flaticon</a>
- */
-
 package de.hka.ws2425.ui.map;
 
 import androidx.lifecycle.ViewModelProvider;
@@ -64,7 +59,7 @@ public class MapFragment extends Fragment {
         // Empfange die Haltestellen- und GTFS-Daten
         getParentFragmentManager().setFragmentResultListener("stopsData", this, (requestKey, result) -> {
             stopsList = (List<Stops>) result.getSerializable("stopsList");
-            if (stopsList != null) {
+            if (stopsList != null && mapView != null) {
                 Log.d("MapFragment", "Anzahl Haltestellen erhalten: " + stopsList.size());
                 MapUtils.addStopsToMap(mapView, stopsList, this::handleMarkerClick);
             }
@@ -103,6 +98,17 @@ public class MapFragment extends Fragment {
         mapController.setCenter(startPoint);
 
         return root;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // Prüfe, ob die Daten bereits geladen wurden und füge die Marker hinzu
+        if (!stopsList.isEmpty() && mapView != null) {
+            Log.d("MapFragment", "Marker werden beim erneuten Laden hinzugefügt.");
+            MapUtils.addStopsToMap(mapView, stopsList, this::handleMarkerClick);
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -149,6 +155,4 @@ public class MapFragment extends Fragment {
             lastClickTime = currentTime;
         }
     }
-
-
 }
