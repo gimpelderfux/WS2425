@@ -1,13 +1,25 @@
 package de.hka.ws2425;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+
+import org.gtfs.reader.GtfsReader;
+import org.gtfs.reader.GtfsSimpleDao;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 import de.hka.ws2425.ui.main.MainFragment;
+import de.hka.ws2425.ui.map.MapFragment;
 import de.hka.ws2425.utils.FileUtils;
 import de.hka.ws2425.utils.GtfsData;
 
