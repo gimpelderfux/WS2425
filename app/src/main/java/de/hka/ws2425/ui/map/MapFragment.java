@@ -92,9 +92,9 @@ public class MapFragment extends Fragment {
         Configuration.getInstance().getAdditionalHttpRequestProperties().put("Authorization", authorizationString);
         mapView.setTileSource(mapServer);
 
-        GeoPoint startPoint = new GeoPoint(48.99958, 8.80337);
+        GeoPoint startPoint = new GeoPoint(48.910059, 8.728463);
         IMapController mapController = mapView.getController();
-        mapController.setZoom(14.0);
+        mapController.setZoom(11.0);
         mapController.setCenter(startPoint);
 
         return root;
