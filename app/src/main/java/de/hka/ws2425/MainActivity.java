@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         stopsDataBundle.putSerializable("stopsList", (ArrayList<?>) gtfsData.getStops());
         getSupportFragmentManager().setFragmentResult("stopsData", stopsDataBundle);
 
-        // Übergabe der gesamten GTFS-Daten (optional, falls benötigt)
+        // Übergabe der gesamten GTFS-Daten
         Bundle gtfsDataBundle = new Bundle();
         gtfsDataBundle.putSerializable("gtfsData", gtfsData);
         getSupportFragmentManager().setFragmentResult("gtfsData", gtfsDataBundle);
