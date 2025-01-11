@@ -3,6 +3,7 @@ package de.hka.ws2425.utils;
 import android.location.Location;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -34,14 +35,18 @@ public class DelayCalculator {
     }
 
     public static Date convertToDate(String timeString) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC")); // Assuming GTFS times are in UTC
-        try {
-            return dateFormat.parse(timeString);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
-        }
+        Calendar calendar = Calendar.getInstance();
+        String[] timeParts = timeString.split(":");
+        int hours = Integer.parseInt(timeParts[0]);
+        int minutes = Integer.parseInt(timeParts[1]);
+        int seconds = Integer.parseInt(timeParts[2]);
+
+        calendar.set(Calendar.HOUR_OF_DAY, hours);
+        calendar.set(Calendar.MINUTE, minutes);
+        calendar.set(Calendar.SECOND, seconds);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar.getTime();
     }
 
     public static long calculateDelay(Date scheduledTime, Date actualTime) {
