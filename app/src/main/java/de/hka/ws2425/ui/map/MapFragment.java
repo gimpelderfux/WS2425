@@ -1,3 +1,8 @@
+/*
+ * Icon Attributierung:
+ * <a href="https://www.flaticon.com/free-icons/bus-stop" title="bus stop icons">Bus stop icons created by mavadee - Flaticon</a>
+ */
+
 package de.hka.ws2425.ui.map;
 
 import androidx.lifecycle.ViewModelProvider;
