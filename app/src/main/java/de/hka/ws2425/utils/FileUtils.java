@@ -38,7 +38,6 @@ public class FileUtils {
         List<StopTimes> stopTimesList = new ArrayList<>();
         List<Trips> tripsList = new ArrayList<>();
         List<Routes> routesList = new ArrayList<>();
-        List<Calendar> calendarsList = new ArrayList<>();
         List<CalendarDate> calendarDatesList = new ArrayList<>();
 
         try {
@@ -79,20 +78,6 @@ public class FileUtils {
                         route.getLongName(), route.getColor()));
             });
 
-            // Calendars
-            gtfsSimpleDao.getCalendars().forEach(calendar -> {
-                calendarsList.add(new Calendar(
-                        calendar.getStartDate(),
-                        calendar.getEndDate(),
-                        calendar.getMonday(),
-                        calendar.getTuesday(),
-                        calendar.getWednesday(),
-                        calendar.getThursday(),
-                        calendar.getFriday(),
-                        calendar.getSaturday(),
-                        calendar.getSunday()
-                ));
-            });
 
             // CalendarDates
             gtfsSimpleDao.getCalendarDates().forEach(calendarDate -> {
@@ -104,7 +89,7 @@ public class FileUtils {
             Log.e("FileUtils", "Fehler beim Lesen der GTFS-Datei: " + e.getMessage());
         }
 
-        return new GtfsData(stopsList, stopTimesList, tripsList, routesList, calendarsList, calendarDatesList);
+        return new GtfsData(stopsList, stopTimesList, tripsList, routesList, calendarDatesList);
     }
 
 

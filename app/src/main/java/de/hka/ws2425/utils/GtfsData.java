@@ -8,16 +8,14 @@ public class GtfsData implements Serializable {
     private List<StopTimes> stopTimes;
     private List<Trips> trips;
     private List<Routes> routes;
-    private List<Calendar> calendars;
     private List<CalendarDate> calendarDates;
 
     public GtfsData(List<Stops> stops, List<StopTimes> stopTimes, List<Trips> trips,
-                    List<Routes> routes, List<Calendar> calendars, List<CalendarDate> calendarDates) {
+                    List<Routes> routes, List<CalendarDate> calendarDates) {
         this.stops = stops;
         this.stopTimes = stopTimes;
         this.trips = trips;
         this.routes = routes;
-        this.calendars = calendars;
         this.calendarDates = calendarDates;
     }
 
@@ -35,10 +33,6 @@ public class GtfsData implements Serializable {
 
     public List<Routes> getRoutes() {
         return routes;
-    }
-
-    public List<Calendar> getCalendars() {
-        return calendars;
     }
 
     public List<CalendarDate> getCalendarDates() {
