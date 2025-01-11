@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Lade GTFS-Daten
-        String assetFileName = "gtfs-hka-s24.zip";
+        String assetFileName = "gtfs-hka-j25.zip";
         File destinationFile = new File(getApplication().getFilesDir(), assetFileName);
 
         if (!destinationFile.exists()) {
