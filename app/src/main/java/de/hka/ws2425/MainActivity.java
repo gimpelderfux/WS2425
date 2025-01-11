@@ -25,6 +25,8 @@ import de.hka.ws2425.utils.GtfsData;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Button btnGoToMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,5 +64,49 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().setFragmentResult("gtfsData", gtfsDataBundle);
 
         Log.d("MainActivity", "GTFS-Daten erfolgreich geladen und übergeben.");
+
+        // Füge den Navigations-Button hinzu
+        setupNavigationButton();
+
+        // Füge den Listener für den Fragment-Wechsel hinzu
+        setupFragmentChangeListener();
+    }
+
+    private void setupNavigationButton() {
+        btnGoToMap = findViewById(R.id.btn_go_to_map);
+        if (btnGoToMap != null) {
+            btnGoToMap.setOnClickListener(v -> {
+                // Ersetze das aktuelle Fragment durch das MapFragment
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.container, new MapFragment())
+                        .addToBackStack(null) // Füge zur Backstack hinzu, um zurück navigieren zu können
+                        .commit();
+            });
+        } else {
+            Log.e("MainActivity", "Button btn_go_to_map nicht gefunden!");
+        }
+    }
+
+    private void setupFragmentChangeListener() {
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.container);
+            if (currentFragment instanceof MapFragment) {
+                hideMapButton();
+            } else {
+                showMapButton();
+            }
+        });
+    }
+
+    private void hideMapButton() {
+        if (btnGoToMap != null) {
+            btnGoToMap.setVisibility(View.GONE);
+        }
+    }
+
+    private void showMapButton() {
+        if (btnGoToMap != null) {
+            btnGoToMap.setVisibility(View.VISIBLE);
+        }
     }
 }
