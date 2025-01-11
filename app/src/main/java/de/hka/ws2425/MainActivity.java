@@ -29,6 +29,10 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
     private List<Stops> allStops;
     private List<TimetableEntry> allTimetableEntries;
     private GtfsData gtfsData;
+    private String selectedBusId;
+    private String selectedStopId;
+    private int selectedDepartureHour;
+    private int selectedDepartureMinute;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +83,14 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
         } else {
             locationHelper.startLocationUpdates();
         }
+
+        getSupportFragmentManager().setFragmentResultListener("departureSelection", this, (requestKey, bundle) -> {
+            selectedBusId = bundle.getString("busId");
+            selectedStopId = bundle.getString("stopId");
+            selectedDepartureHour = bundle.getInt("departureHour");
+            selectedDepartureMinute = bundle.getInt("departureMinute");
+            Log.d("MainActivity", "Selected Bus: " + selectedBusId + ", Stop: " + selectedStopId + ", Departure: " + selectedDepartureHour + ":" + selectedDepartureMinute);
+        });
     }
 
     @Override
@@ -92,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
             Log.d("MainActivity", "Closest Stop: " + currentStop.getName());
 
             // Find the current timetable entry (replace with your logic to find the correct entry)
-            TimetableEntry currentTimetableEntry = findCurrentTimetableEntry(currentStop.getId(), "yourBusId"); // Replace "yourBusId" with the actual bus ID
+            TimetableEntry currentTimetableEntry = findCurrentTimetableEntry(currentStop.getId(), selectedBusId);
 
             if (currentTimetableEntry != null) {
                 // Calculate the delay
@@ -112,9 +124,14 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
 
     // Helper method to find the current timetable entry (replace with your actual logic)
     private TimetableEntry findCurrentTimetableEntry(String stopId, String busId) {
+        // Check if a bus has been selected
+        if (selectedBusId == null || selectedStopId == null) {
+            Log.d("MainActivity", "No bus selected.");
+            return null;
+        }
         // Replace this with your actual logic to find the correct timetable entry
         for (TimetableEntry entry : allTimetableEntries) {
-            if (entry.getStopId().equals(stopId) && entry.getBusId().equals(busId)) {
+            if (entry.getStopId().equals(stopId) && entry.getBusId().equals(selectedBusId)) {
                 return entry;
             }
         }

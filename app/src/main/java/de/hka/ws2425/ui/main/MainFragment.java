@@ -24,6 +24,7 @@ import de.hka.ws2425.R;
 public class MainFragment extends Fragment {
 
     private MainViewModel mViewModel;
+    private TextView delayTextView;
 
     public static MainFragment newInstance() {
         return new MainFragment();
@@ -40,7 +41,18 @@ public class MainFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_main, container, false);
+        View view = inflater.inflate(R.layout.fragment_main, container, false);
+        delayTextView = view.findViewById(R.id.delayTextView); // Get a reference to the TextView
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        getParentFragmentManager().setFragmentResultListener("delayUpdate", getViewLifecycleOwner(), (requestKey, bundle) -> {
+            long delay = bundle.getLong("delay");
+            delayTextView.setText("Delay: " + delay + " minutes");
+        });
     }
 
     @Override
