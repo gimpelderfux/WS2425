@@ -76,15 +76,16 @@ public class MainActivity extends AppCompatActivity {
         btnGoToMap = findViewById(R.id.btn_go_to_map);
         if (btnGoToMap != null) {
             btnGoToMap.setOnClickListener(v -> {
-                // Prüfe, ob im Backstack ein Fragment ist
-                if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                    // Gehe zum vorherigen Fragment im Backstack (wie die Zurück-Taste)
-                    getSupportFragmentManager().popBackStack();
+                Fragment mapFragment = getSupportFragmentManager().findFragmentByTag("MAP_FRAGMENT");
+
+                if (mapFragment != null) {
+                    // Wenn das MapFragment existiert, bringe es in den Vordergrund
+                    getSupportFragmentManager().popBackStack("MAP_FRAGMENT", 0);
                 } else {
-                    // Wenn kein Fragment im Backstack ist, lade die Karte neu
+                    // Falls es nicht existiert, erstelle es neu
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.container, new MapFragment())
-                            .addToBackStack(null)
+                            .replace(R.id.container, new MapFragment(), "MAP_FRAGMENT")
+                            .addToBackStack("MAP_FRAGMENT")
                             .commit();
                 }
             });
@@ -92,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Button btn_go_to_map nicht gefunden!");
         }
     }
+
+
 
 
     private void setupFragmentChangeListener() {
