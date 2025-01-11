@@ -1,39 +1,31 @@
 package de.hka.ws2425.utils;
 
 import android.location.Location;
-import java.util.Calendar;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class DelayCalculator {
 
-    public static final double THRESHOLD_DISTANCE = 100.0; // meters
+    public static Stops findClosestStop(Location location, List<Stops> stops) {
+        if (location == null || stops == null || stops.isEmpty()) {
+            return null;
+        }
 
-    public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        double earthRadius = 6371.0; // Radius of the earth in km
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return earthRadius * c * 1000; // Distance in meters
-    }
-
-    public static Stops findClosestStop(Location currentLocation, List<Stops> stops) {
         Stops closestStop = null;
-        double minDistance = Double.MAX_VALUE;
+        float closestDistance = Float.MAX_VALUE;
 
         for (Stops stop : stops) {
-            double distance = calculateDistance(
-                    currentLocation.getLatitude(),
-                    currentLocation.getLongitude(),
-                    stop.getLatitude(),
-                    stop.getLongitude()
-            );
-            if (distance < minDistance) {
-                minDistance = distance;
+            float[] results = new float[1];
+            Location.distanceBetween(location.getLatitude(), location.getLongitude(),
+                    stop.getLatitude(), stop.getLongitude(), results);
+            float distance = results[0];
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
                 closestStop = stop;
             }
         }
@@ -41,17 +33,22 @@ public class DelayCalculator {
         return closestStop;
     }
 
-    public static long calculateDelay(Date scheduledTime, Date actualTime) {
-        long diffInMillies = actualTime.getTime() - scheduledTime.getTime();
-        return TimeUnit.MINUTES.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    public static Date convertToDate(String timeString) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC")); // Assuming GTFS times are in UTC
+        try {
+            return dateFormat.parse(timeString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    public static Date convertToDate(int hour, int minute) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
+    public static long calculateDelay(Date scheduledTime, Date actualTime) {
+        if (scheduledTime == null || actualTime == null) {
+            return 0;
+        }
+        long delayInMillis = actualTime.getTime() - scheduledTime.getTime();
+        return delayInMillis / (60 * 1000); // Convert milliseconds to minutes
     }
 }

@@ -19,7 +19,6 @@ import de.hka.ws2425.utils.FileUtils;
 import de.hka.ws2425.utils.GtfsData;
 import de.hka.ws2425.utils.LocationHelper;
 import de.hka.ws2425.utils.Stops;
-import de.hka.ws2425.utils.TimetableEntry;
 import de.hka.ws2425.utils.StopTimes;
 
 public class MainActivity extends AppCompatActivity implements LocationHelper.LocationUpdateListener {
@@ -27,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private LocationHelper locationHelper;
     private List<Stops> allStops;
-    private List<TimetableEntry> allTimetableEntries;
+    private List<StopTimes> allStopTimes;
     private GtfsData gtfsData;
     private String selectedBusId;
     private String selectedStopId;
@@ -60,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
         // Load GTFS data
         gtfsData = FileUtils.loadGtfsData(destinationFile);
         allStops = gtfsData.getStops();
-        allTimetableEntries = convertStopTimesToTimetableEntries(gtfsData.getStopTimes());
+        allStopTimes = gtfsData.getStopTimes();
 
         // Pass stop data to the map view
         Bundle stopsDataBundle = new Bundle();
@@ -103,52 +102,42 @@ public class MainActivity extends AppCompatActivity implements LocationHelper.Lo
         if (currentStop != null) {
             Log.d("MainActivity", "Closest Stop: " + currentStop.getName());
 
-            // Find the current timetable entry (replace with your logic to find the correct entry)
-            TimetableEntry currentTimetableEntry = findCurrentTimetableEntry(currentStop.getId(), selectedBusId);
+            // Find the current stop time
+            StopTimes currentStopTime = findCurrentStopTime(currentStop.getId(), selectedBusId);
 
-            if (currentTimetableEntry != null) {
+            if (currentStopTime != null) {
                 // Calculate the delay
-                Date scheduledTime = DelayCalculator.convertToDate(currentTimetableEntry.getScheduledArrivalHour(), currentTimetableEntry.getScheduledArrivalMinute());
+                Date scheduledTime = DelayCalculator.convertToDate(currentStopTime.getArrivalTime());
                 Date actualTime = new Date(); // Current time
                 long delayInMinutes = DelayCalculator.calculateDelay(scheduledTime, actualTime);
 
                 Log.d("MainActivity", "Delay: " + delayInMinutes + " minutes");
-                // ... Update UI with delay information ...
+                // Pass the delay to the fragment
+                Bundle delayBundle = new Bundle();
+                delayBundle.putLong("delay", delayInMinutes);
+                getSupportFragmentManager().setFragmentResult("delayUpdate", delayBundle);
             } else {
-                Log.d("MainActivity", "No timetable entry found for this stop and bus.");
+                Log.d("MainActivity", "No stop time found for this stop and bus.");
             }
         } else {
             Log.d("MainActivity", "No stop found nearby.");
         }
     }
 
-    // Helper method to find the current timetable entry (replace with your actual logic)
-    private TimetableEntry findCurrentTimetableEntry(String stopId, String busId) {
+    // Helper method to find the current stop time
+    private StopTimes findCurrentStopTime(String stopId, String busId) {
         // Check if a bus has been selected
         if (selectedBusId == null || selectedStopId == null) {
             Log.d("MainActivity", "No bus selected.");
             return null;
         }
-        // Replace this with your actual logic to find the correct timetable entry
-        for (TimetableEntry entry : allTimetableEntries) {
-            if (entry.getStopId().equals(stopId) && entry.getBusId().equals(selectedBusId)) {
-                return entry;
+        // Find the correct stop time
+        for (StopTimes stopTime : allStopTimes) {
+            if (stopTime.getStopId().equals(stopId) && stopTime.getTripId().equals(busId)) {
+                return stopTime;
             }
         }
         return null;
-    }
-
-    // Helper method to convert StopTimes to TimetableEntry
-    private List<TimetableEntry> convertStopTimesToTimetableEntries(List<StopTimes> stopTimes) {
-        List<TimetableEntry> timetableEntries = new ArrayList<>();
-        for (StopTimes stopTime : stopTimes) {
-            String[] timeParts = stopTime.getArrivalTime().split(":");
-            int hour = Integer.parseInt(timeParts[0]);
-            int minute = Integer.parseInt(timeParts[1]);
-            TimetableEntry entry = new TimetableEntry(stopTime.getTripId(), stopTime.getStopId(), hour, minute);
-            timetableEntries.add(entry);
-        }
-        return timetableEntries;
     }
 
     @Override
