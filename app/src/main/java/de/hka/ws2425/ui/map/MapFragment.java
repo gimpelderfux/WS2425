@@ -1,23 +1,22 @@
 package de.hka.ws2425.ui.map;
 
-import androidx.lifecycle.ViewModelProvider;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.nabinbhandari.android.permissions.PermissionHandler;
 import com.nabinbhandari.android.permissions.Permissions;
@@ -36,7 +35,6 @@ import de.hka.ws2425.R;
 public class MapFragment extends Fragment {
 
     private MapViewModel mViewModel;
-
     private MapView mapView;
 
     public static MapFragment newInstance() {
@@ -47,7 +45,6 @@ public class MapFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mViewModel = new ViewModelProvider(this).get(MapViewModel.class);
-        // TODO: Use the ViewModel
     }
 
     @Override
@@ -64,7 +61,7 @@ public class MapFragment extends Fragment {
                 new String[]{"https://tileserver.svprod01.app/styles/default/"}
         );
 
-        String authorizationString = this.getMapServerAuthorizationString(
+        String authorizationString = getMapServerAuthorizationString(
                 "ws2223@hka",
                 "LeevwBfDi#2027"
         );
@@ -82,7 +79,23 @@ public class MapFragment extends Fragment {
         mapController.setZoom(14.0);
         mapController.setCenter(startPoint);
 
+        setupHomeButton(root); // Hier wird der Button hinzugefügt
+
         return root;
+    }
+
+    private void setupHomeButton(View view) {
+        Button btnGoToHome = view.findViewById(R.id.btn_go_to_home);
+        if (btnGoToHome != null) {
+            btnGoToHome.setOnClickListener(v -> {
+                // Navigiere zurück zur MainActivity (Startseite)
+                if (getActivity() != null) {
+                    getActivity().getSupportFragmentManager().popBackStack();
+                }
+            });
+        } else {
+            Log.e("MapFragment", "Button btn_go_to_home nicht gefunden!");
+        }
     }
 
     @Override
@@ -107,11 +120,10 @@ public class MapFragment extends Fragment {
     }
 
     @SuppressLint("MissingPermission")
-    private void setupLocationListener()
-    {
+    private void setupLocationListener() {
         LocationListener locationListener = new LocationListener() {
             @Override
-            public void onLocationChanged(android.location.Location location) {
+            public void onLocationChanged(@NonNull Location location) {
                 double latitude = location.getLatitude();
                 double longitude = location.getLongitude();
 
@@ -123,17 +135,14 @@ public class MapFragment extends Fragment {
 
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
-
             }
 
             @Override
             public void onProviderEnabled(String provider) {
-
             }
 
             @Override
             public void onProviderDisabled(String provider) {
-
             }
         };
 
@@ -149,8 +158,7 @@ public class MapFragment extends Fragment {
         );
     }
 
-    private String getMapServerAuthorizationString(String username, String password)
-    {
+    private String getMapServerAuthorizationString(String username, String password) {
         String authorizationString = String.format("%s:%s", username, password);
         return "Basic " + Base64.encodeToString(authorizationString.getBytes(StandardCharsets.UTF_8), Base64.DEFAULT);
     }
