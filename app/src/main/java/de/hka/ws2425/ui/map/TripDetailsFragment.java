@@ -14,30 +14,31 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.osmdroid.util.GeoPoint;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import de.hka.ws2425.R;
 import de.hka.ws2425.utils.GtfsData;
-import de.hka.ws2425.utils.StopTimes;
-import de.hka.ws2425.utils.Stops;
 
 public class TripDetailsFragment extends Fragment {
 
     private static final String ARG_TRIP_ID = "tripId";
     private static final String ARG_GTFS_DATA = "gtfsData";
+    private static final String ARG_CURRENT_LOCATION = "currentLocation";
 
     private String tripId;
     private GtfsData gtfsData;
+    private GeoPoint currentLocation; // Aktuelle Position des Nutzers
     private List<String> tripDetails = new ArrayList<>();
 
-    public static TripDetailsFragment newInstance(String tripId, GtfsData gtfsData) {
+    public static TripDetailsFragment newInstance(String tripId, GtfsData gtfsData, GeoPoint currentLocation) {
         TripDetailsFragment fragment = new TripDetailsFragment();
         Bundle args = new Bundle();
         args.putString(ARG_TRIP_ID, tripId);
         args.putSerializable(ARG_GTFS_DATA, gtfsData);
+        args.putParcelable(ARG_CURRENT_LOCATION, currentLocation);
         fragment.setArguments(args);
         return fragment;
     }
@@ -48,10 +49,11 @@ public class TripDetailsFragment extends Fragment {
         if (getArguments() != null) {
             tripId = getArguments().getString(ARG_TRIP_ID);
             gtfsData = (GtfsData) getArguments().getSerializable(ARG_GTFS_DATA);
-            Log.d("TripDetailsFragment", "Trip-ID erhalten: " + tripId);
+            currentLocation = getArguments().getParcelable(ARG_CURRENT_LOCATION);
+            Log.d("TripDetailsFragment", "Trip-ID und Position erhalten: " + tripId);
 
-            // Lade die Haltestellen der Fahrt mit Namen
-            tripDetails = getTripDetailsWithStopNames(gtfsData, tripId);
+            // Lade die Haltestellen der Fahrt mit Verspätung
+            tripDetails = MapUtils.getTripDetailsWithDelays(gtfsData, tripId, currentLocation);
         }
     }
 
@@ -66,37 +68,10 @@ public class TripDetailsFragment extends Fragment {
         // Setze die Trip-ID
         tripIdTextView.setText("Fahrt-ID: " + tripId);
 
-        // Zeige die Haltestellen mit Fahrzeiten in der Liste
+        // Zeige die Haltestellen mit Fahrzeiten und Verspätungen in der Liste
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, tripDetails);
         stopsListView.setAdapter(adapter);
 
         return view;
-    }
-
-    private List<String> getTripDetailsWithStopNames(GtfsData gtfsData, String tripId) {
-        List<String> tripDetails = new ArrayList<>();
-
-        // Erstelle eine Map für schnellen Zugriff auf Stop-Namen
-        Map<String, String> stopIdToNameMap = new HashMap<>();
-        for (Stops stop : gtfsData.getStops()) {
-            stopIdToNameMap.put(stop.getId(), stop.getName());
-        }
-
-        // Füge Details mit Namen der Haltestellen hinzu
-        for (StopTimes stopTime : gtfsData.getStopTimes()) {
-            if (stopTime.getTripId().equals(tripId)) {
-                String stopName = stopIdToNameMap.getOrDefault(stopTime.getStopId(), "Unbekannte Haltestelle");
-                String detail = "Haltestelle: " + stopName +
-                        "\nAnkunft: " + stopTime.getArrivalTime() +
-                        "\nAbfahrt: " + stopTime.getDepartureTime();
-                tripDetails.add(detail);
-            }
-        }
-
-        if (tripDetails.isEmpty()) {
-            tripDetails.add("Keine Daten für diese Fahrt verfügbar.");
-        }
-
-        return tripDetails;
     }
 }

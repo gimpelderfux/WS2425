@@ -4,14 +4,19 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import de.hka.ws2425.R;
@@ -21,6 +26,8 @@ import de.hka.ws2425.utils.StopTimes;
 import de.hka.ws2425.utils.Stops;
 
 public class MapUtils {
+
+    private static final double AVERAGE_SPEED_MPS = 5.6; // Durchschnittsgeschwindigkeit in m/s
 
     public static void addStopsToMap(MapView mapView, List<Stops> stopsList, MarkerClickListener listener) {
         for (Stops stop : stopsList) {
@@ -120,14 +127,60 @@ public class MapUtils {
         void onMarkerClick(Marker marker, Stops stop);
     }
 
-    public static List<String> getTripDetails(GtfsData gtfsData, String tripId) {
+    public static List<String> getTripDetailsWithDelays(GtfsData gtfsData, String tripId, GeoPoint currentLocation) {
         List<String> tripDetails = new ArrayList<>();
+        double averageSpeedMps = 5.6; // Durchschnittsgeschwindigkeit in m/s
+
+        // Berechne die aktuelle Zeit in Sekunden ab Mitternacht
+        int currentTimeInSeconds = getCurrentTimeInSeconds();
+        Log.d("Berechnung", "Aktuelle Uhrzeit in Sekunden ab Mitternacht: " + currentTimeInSeconds);
 
         for (StopTimes stopTime : gtfsData.getStopTimes()) {
             if (stopTime.getTripId().equals(tripId)) {
-                String detail = "Haltestelle: " + stopTime.getStopId() +
-                        "\nAnkunft: " + stopTime.getArrivalTime() +
-                        "\nAbfahrt: " + stopTime.getDepartureTime();
+                // Hole die entsprechende Haltestelle
+                Stops stop = gtfsData.getStops().stream()
+                        .filter(s -> s.getId().equals(stopTime.getStopId()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (stop == null) {
+                    Log.d("Berechnung", "Keine Daten für Stop-ID: " + stopTime.getStopId());
+                    continue; // Überspringen, wenn die Haltestelle nicht gefunden wird
+                }
+
+                String stopName = stop.getName();
+                GeoPoint stopLocation = new GeoPoint(stop.getLatitude(), stop.getLongitude());
+                Log.d("Berechnung", "Stop Location: " + stopLocation.toDoubleString());
+                Log.d("Berechnung", "currentLocation: " + currentLocation.toDoubleString());
+
+                // Konvertiere geplante Abfahrtszeit in Sekunden
+                int plannedDepartureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
+                Log.d("Berechnung", "Abfahrtszeit in Sekunden für Stop " + stopName + ": " + plannedDepartureTimeInSeconds);
+
+                // Berechne Zeitabweichung
+                int timeDelayInSeconds = currentTimeInSeconds - plannedDepartureTimeInSeconds;
+                Log.d("Berechnung", "Zeitabweichung für Stop " + stopName + ": " + timeDelayInSeconds);
+
+                // Berechne Distanzabweichung
+                double distanceToStop = currentLocation.distanceToAsDouble(stopLocation); // Distanz in Metern
+                Log.d("Berechnung", "Distanz zur Haltestelle " + stopName + ": " + distanceToStop + " Meter");
+                int distanceDelayInSeconds = (int) (distanceToStop / averageSpeedMps);
+                Log.d("Berechnung", "Distanzabweichung für Stop " + stopName + ": " + distanceDelayInSeconds);
+
+                // Gesamtabweichung berechnen
+                int totalDelayInSeconds = Math.abs(timeDelayInSeconds) + distanceDelayInSeconds;
+                Log.d("Berechnung", "Gesamtabweichung für Stop " + stopName + ": " + totalDelayInSeconds);
+
+                String delayText = String.format("Abweichung: %d Minuten", totalDelayInSeconds / 60);
+
+                // Detailtext hinzufügen
+                String detail = String.format(
+                        "Haltestelle: %s\nAnkunft: %s\nAbfahrt: %s\n%s",
+                        stopName,
+                        stopTime.getArrivalTime(),
+                        stopTime.getDepartureTime(),
+                        delayText
+                );
                 tripDetails.add(detail);
             }
         }
@@ -138,4 +191,20 @@ public class MapUtils {
 
         return tripDetails;
     }
+
+    // Hilfsmethode zum Konvertieren von HH:MM:SS in Sekunden
+    private static int parseTimeToSeconds(String time) {
+        String[] parts = time.split(":");
+        return Integer.parseInt(parts[0]) * 3600 + Integer.parseInt(parts[1]) * 60 + Integer.parseInt(parts[2]);
+    }
+
+    // Hilfsmethode zur Berechnung der aktuellen Zeit in Sekunden ab Mitternacht
+    private static int getCurrentTimeInSeconds() {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        int second = calendar.get(Calendar.SECOND);
+        return hour * 3600 + minute * 60 + second;
+    }
+
 }

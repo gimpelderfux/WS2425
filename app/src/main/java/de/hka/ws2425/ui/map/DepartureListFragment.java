@@ -10,10 +10,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +27,20 @@ public class DepartureListFragment extends Fragment {
     private static final String ARG_STOP_NAME = "stopName";
     private static final String ARG_DEPARTURES = "departures";
     private static final String ARG_GTFS_DATA = "gtfsData";
+    private static final String ARG_CURRENT_LOCATION = "currentLocation";
 
     private String stopName;
     private List<String> departures;
     private GtfsData gtfsData;
+    private GeoPoint currentLocation;
 
-    public static DepartureListFragment newInstance(String stopName, List<String> departures, GtfsData gtfsData) {
+    public static DepartureListFragment newInstance(String stopName, List<String> departures, GtfsData gtfsData, GeoPoint currentLocation) {
         DepartureListFragment fragment = new DepartureListFragment();
         Bundle args = new Bundle();
         args.putString(ARG_STOP_NAME, stopName);
         args.putStringArrayList(ARG_DEPARTURES, new ArrayList<>(departures));
         args.putSerializable(ARG_GTFS_DATA, gtfsData);
+        args.putParcelable(ARG_CURRENT_LOCATION, currentLocation);
         fragment.setArguments(args);
         return fragment;
     }
@@ -48,7 +52,8 @@ public class DepartureListFragment extends Fragment {
             stopName = getArguments().getString(ARG_STOP_NAME);
             departures = getArguments().getStringArrayList(ARG_DEPARTURES);
             gtfsData = (GtfsData) getArguments().getSerializable(ARG_GTFS_DATA);
-            Log.d("DepartureListFragment", "GTFS-Daten erfolgreich erhalten.");
+            currentLocation = getArguments().getParcelable(ARG_CURRENT_LOCATION);
+            Log.d("DepartureListFragment", "GTFS-Daten und Position erfolgreich erhalten.");
         }
     }
 
@@ -75,8 +80,8 @@ public class DepartureListFragment extends Fragment {
             // Extrahiere die Trip-ID aus der Abfahrtsinformation
             String tripId = selectedDeparture.split("Trip: ")[1].trim();
 
-            // Navigation zu TripDetailsFragment
-            TripDetailsFragment fragment = TripDetailsFragment.newInstance(tripId, gtfsData);
+            // Navigation zu TripDetailsFragment mit Übergabe der aktuellen Position
+            TripDetailsFragment fragment = TripDetailsFragment.newInstance(tripId, gtfsData, currentLocation);
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.container, fragment)

@@ -38,6 +38,8 @@ import de.hka.ws2425.utils.Stops;
 
 public class MapFragment extends Fragment {
 
+    private GeoPoint currentLocation;
+
     private MapViewModel mViewModel;
     private MapView mapView;
 
@@ -54,6 +56,7 @@ public class MapFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupLocationListener();
         mViewModel = new ViewModelProvider(this).get(MapViewModel.class);
 
         // Empfange die Haltestellen- und GTFS-Daten
@@ -116,10 +119,8 @@ public class MapFragment extends Fragment {
         LocationListener locationListener = location -> {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-
-            GeoPoint startPoint = new GeoPoint(latitude, longitude);
-            IMapController mapController = mapView.getController();
-            mapController.setCenter(startPoint);
+            currentLocation = new GeoPoint(latitude, longitude);
+            Log.d("MapFragment", "Aktuelle Position: " + currentLocation.toDoubleString());
         };
 
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
@@ -139,7 +140,7 @@ public class MapFragment extends Fragment {
             List<String> departures = MapUtils.getDeparturesForStop(gtfsData, stop.getId());
             if (!departures.isEmpty()) {
                 // Navigation zu DepartureListFragment
-                DepartureListFragment fragment = DepartureListFragment.newInstance(stop.getName(), departures, gtfsData);
+                DepartureListFragment fragment = DepartureListFragment.newInstance(stop.getName(), departures, gtfsData, getCurrentLocation());
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.container, fragment)
@@ -154,5 +155,9 @@ public class MapFragment extends Fragment {
             lastClickedStopId = stop.getId();
             lastClickTime = currentTime;
         }
+    }
+
+    public GeoPoint getCurrentLocation() {
+        return currentLocation;
     }
 }
