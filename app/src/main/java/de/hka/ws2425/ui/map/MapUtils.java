@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import de.hka.ws2425.utils.Trips;
 
 import de.hka.ws2425.R;
 import de.hka.ws2425.utils.CalendarDate;
@@ -75,8 +76,8 @@ public class MapUtils {
         mapView.invalidate(); // Karte aktualisieren
     }
 
-    public static List<String> getDeparturesForStop(GtfsData gtfsData, String stopId) {
-        List<String> departures = new ArrayList<>();
+    public static Map<String, String> getDeparturesForStop(GtfsData gtfsData, String stopId, List<String> displayDepartures) {
+        Map<String, String> tripIdMapping = new HashMap<>(); // Map: "Abfahrt um HH:MM:SS - Ziel: XYZ" -> TripId
 
         // 1. Ermittle den aktuellen Betriebstag (im Format YYYYMMDD)
         String currentDate = new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(new java.util.Date());
@@ -91,12 +92,17 @@ public class MapUtils {
 
         // 3. Überprüfe, ob es gültige Service-IDs gibt
         if (validServiceIds.isEmpty()) {
-            departures.add("An diesem Tag gibt es hier keine Fahrten.");
-            return departures;
+            displayDepartures.add("An diesem Tag gibt es hier keine Fahrten.");
+            return tripIdMapping;
         }
 
-        // 4. Finde alle Stop-Times für die gültigen Service-IDs
-        boolean hasDeparturesForDay = false;
+        // 4. Hole die aktuelle Uhrzeit in Sekunden
+        int currentTimeInSeconds = getCurrentTimeInSeconds();
+        Log.d("Berechnung", "Aktuelle Zeit in Sekunden: " + currentTimeInSeconds);
+
+        // 5. Finde alle gültigen Stop-Times und ergänze die Endhaltestelle
+        List<String[]> sortedDepartures = new ArrayList<>();
+
         for (StopTimes stopTime : gtfsData.getStopTimes()) {
             if (stopTime.getStopId().equals(stopId)) {
                 String tripId = stopTime.getTripId();
@@ -106,22 +112,51 @@ public class MapUtils {
                         .anyMatch(trip -> trip.getTripId().equals(tripId) && validServiceIds.contains(trip.getServiceId()));
 
                 if (isValidTrip) {
-                    hasDeparturesForDay = true;
-                    String departure = "Abfahrt um " + stopTime.getDepartureTime() + " - Trip: " + tripId;
-                    departures.add(departure);
+                    // Hole die Endhaltestelle (TripHeadsign) aus der Klasse Trips
+                    Trips trip = gtfsData.getTrips().stream()
+                            .filter(t -> t.getTripId().equals(tripId))
+                            .findFirst()
+                            .orElse(null);
+
+                    String tripHeadsign = (trip != null && trip.getTripHeadsign() != null) ? trip.getTripHeadsign() : "Unbekanntes Ziel";
+
+                    // Konvertiere die Abfahrtszeit in Sekunden
+                    int departureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
+
+                    // Nur Abfahrten berücksichtigen, die ab jetzt gültig sind
+                    if (departureTimeInSeconds >= currentTimeInSeconds) {
+                        sortedDepartures.add(new String[]{
+                                String.valueOf(departureTimeInSeconds), // Für Sortierung
+                                tripHeadsign,
+                                stopTime.getDepartureTime(), // Ursprüngliches Format für die Anzeige
+                                tripId // TripId zur späteren Zuordnung
+                        });
+                    }
                 }
             }
         }
 
-        // 5. Keine gültigen Abfahrten für den Tag
-        if (!hasDeparturesForDay) {
-            departures.add("An diesem Tag gibt es hier keine Fahrten.");
-        } else if (departures.isEmpty()) {
-            departures.add("Keine Abfahrten verfügbar.");
+        // 6. Sortiere nach Abfahrtszeit
+        sortedDepartures.sort((a, b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
+
+        // 7. Formatiere die Ausgaben
+        for (String[] departure : sortedDepartures) {
+            String formattedDeparture = String.format("Abfahrt um %s - Ziel: %s", departure[2], departure[1]);
+            displayDepartures.add(formattedDeparture);
+
+            // Speichere die Zuordnung "Anzeige-String -> TripId"
+            tripIdMapping.put(formattedDeparture, departure[3]); // departure[3] ist die TripId
         }
 
-        return departures;
+        // 8. Keine gültigen Abfahrten mehr für den Tag
+        if (displayDepartures.isEmpty()) {
+            displayDepartures.add("Keine Abfahrten mehr verfügbar.");
+        }
+
+        return tripIdMapping; // Rückgabe der Zuordnung
     }
+
+
 
     public interface MarkerClickListener {
         void onMarkerClick(Marker marker, Stops stop);
@@ -129,7 +164,7 @@ public class MapUtils {
 
     public static List<String> getTripDetailsWithDelays(GtfsData gtfsData, String tripId, GeoPoint currentLocation) {
         List<String> tripDetails = new ArrayList<>();
-        double averageSpeedMps = 5.6; // Durchschnittsgeschwindigkeit in m/s
+        double averageSpeedMps = 9.7; // Durchschnittsgeschwindigkeit in m/s
 
         // Berechne die aktuelle Zeit in Sekunden ab Mitternacht
         int currentTimeInSeconds = getCurrentTimeInSeconds();

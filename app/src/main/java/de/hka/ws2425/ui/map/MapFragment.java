@@ -28,10 +28,11 @@ import org.osmdroid.views.overlay.Marker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.hka.ws2425.R;
-
 import androidx.fragment.app.FragmentResultListener;
 import de.hka.ws2425.utils.GtfsData;
 import de.hka.ws2425.utils.Stops;
@@ -137,10 +138,17 @@ public class MapFragment extends Fragment {
 
         if (lastClickedStopId != null && lastClickedStopId.equals(stop.getId()) && (currentTime - lastClickTime) < 1000) {
             // Zweiter Klick erkannt: Zeige Abfahrtsliste
-            List<String> departures = MapUtils.getDeparturesForStop(gtfsData, stop.getId());
-            if (!departures.isEmpty()) {
+            List<String> displayDepartures = new ArrayList<>();
+            Map<String, String> tripIdMapping = MapUtils.getDeparturesForStop(gtfsData, stop.getId(), displayDepartures);
+            if (!displayDepartures.isEmpty()) {
                 // Navigation zu DepartureListFragment
-                DepartureListFragment fragment = DepartureListFragment.newInstance(stop.getName(), departures, gtfsData, getCurrentLocation());
+                DepartureListFragment fragment = DepartureListFragment.newInstance(
+                        stop.getName(),
+                        displayDepartures,
+                        tripIdMapping,
+                        gtfsData,
+                        getCurrentLocation()
+                );
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.container, fragment)

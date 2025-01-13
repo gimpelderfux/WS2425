@@ -69,7 +69,7 @@ public class FileUtils {
 
             // Trips
             gtfsSimpleDao.getTrips().forEach(trip -> {
-                tripsList.add(new Trips(trip.getRouteId(), trip.getServiceId(), trip.getTripId()));
+                tripsList.add(new Trips(trip.getRouteId(), trip.getServiceId(), trip.getTripId(), trip.getHeadsign()));
             });
 
             // Routes
