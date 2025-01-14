@@ -1,8 +1,5 @@
 package de.hka.ws2425.utils;
 
-/**
- * Represents a stop from the GTFS data.
- */
 public class Stops {
     private String id;
     private String name;

@@ -1,4 +1,6 @@
 <resources>
-    <string name="app_name">WS2425</string>
+    <string name="app_name">BusBuddy</string>
     <string name="main_hello_world">Hallo, Welt!</string>
+    <string name="title_activity_stop_departures">StopDepartures</string>
+    <string name="zur_karte">Zur Karte</string>
 </resources>
