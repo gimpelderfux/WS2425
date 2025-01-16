@@ -164,15 +164,52 @@ public class MapUtils {
 
     public static List<String> getTripDetailsWithDelays(GtfsData gtfsData, String tripId, GeoPoint currentLocation) {
         List<String> tripDetails = new ArrayList<>();
-        double averageSpeedMps = 9.7; // Durchschnittsgeschwindigkeit in m/s
-
-        // Berechne die aktuelle Zeit in Sekunden ab Mitternacht
         int currentTimeInSeconds = getCurrentTimeInSeconds();
         Log.d("Berechnung", "Aktuelle Uhrzeit in Sekunden ab Mitternacht: " + currentTimeInSeconds);
 
+        Stops closestStop = null;
+        double minDistance = Double.MAX_VALUE;
+
+        // Finde die nächstgelegene Haltestelle
         for (StopTimes stopTime : gtfsData.getStopTimes()) {
             if (stopTime.getTripId().equals(tripId)) {
-                // Hole die entsprechende Haltestelle
+                Stops stop = gtfsData.getStops().stream()
+                        .filter(s -> s.getId().equals(stopTime.getStopId()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (stop != null) {
+                    double distance = currentLocation.distanceToAsDouble(new GeoPoint(stop.getLatitude(), stop.getLongitude()));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestStop = stop;
+                    }
+                }
+            }
+        }
+
+        if (closestStop == null) {
+            tripDetails.add("Keine Haltestellen für diese Fahrt gefunden.");
+            return tripDetails;
+        }
+
+        Log.d("Berechnung", "Nächstgelegene Haltestelle: " + closestStop.getName());
+
+        // Berechne die Zeitabweichung nur für die nächstgelegene Haltestelle
+        int plannedDepartureTimeInSeconds = 0;
+        for (StopTimes stopTime : gtfsData.getStopTimes()) {
+            if (stopTime.getTripId().equals(tripId) && stopTime.getStopId().equals(closestStop.getId())) {
+                plannedDepartureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
+                Log.d("Berechnung", "Abfahrtszeit in Sekunden für nächste Haltestelle " + closestStop.getName() + ": " + plannedDepartureTimeInSeconds);
+                break;
+            }
+        }
+        int timeDelayInSeconds = currentTimeInSeconds - plannedDepartureTimeInSeconds;
+        Log.d("Berechnung", "Zeitabweichung für nächste Haltestelle " + closestStop.getName() + ": " + timeDelayInSeconds);
+
+        // Gib die gleiche Zeitabweichung für alle Haltestellen aus
+        for (StopTimes stopTime : gtfsData.getStopTimes()) {
+            if (stopTime.getTripId().equals(tripId)) {
                 Stops stop = gtfsData.getStops().stream()
                         .filter(s -> s.getId().equals(stopTime.getStopId()))
                         .findFirst()
@@ -180,37 +217,26 @@ public class MapUtils {
 
                 if (stop == null) {
                     Log.d("Berechnung", "Keine Daten für Stop-ID: " + stopTime.getStopId());
-                    continue; // Überspringen, wenn die Haltestelle nicht gefunden wird
+                    continue;
                 }
 
                 String stopName = stop.getName();
-                GeoPoint stopLocation = new GeoPoint(stop.getLatitude(), stop.getLongitude());
-                Log.d("Berechnung", "Stop Location: " + stopLocation.toDoubleString());
-                Log.d("Berechnung", "currentLocation: " + currentLocation.toDoubleString());
+                Log.d("Berechnung", "Haltestelle: " + stopName);
 
-                // Konvertiere geplante Abfahrtszeit in Sekunden
-                int plannedDepartureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
-                Log.d("Berechnung", "Abfahrtszeit in Sekunden für Stop " + stopName + ": " + plannedDepartureTimeInSeconds);
+                String delayText;
+                if (timeDelayInSeconds > 0) {
+                    delayText = String.format("Verspätung: %d Minuten", timeDelayInSeconds / 60);
+                } else if (timeDelayInSeconds < 0) {
+                    delayText = String.format("Verfrühung: %d Minuten", Math.abs(timeDelayInSeconds) / 60);
+                } else {
+                    delayText = "Pünktlich";
+                }
 
-                // Berechne Zeitabweichung
-                int timeDelayInSeconds = currentTimeInSeconds - plannedDepartureTimeInSeconds;
-                Log.d("Berechnung", "Zeitabweichung für Stop " + stopName + ": " + timeDelayInSeconds);
-
-                // Berechne Distanzabweichung
-                double distanceToStop = currentLocation.distanceToAsDouble(stopLocation); // Distanz in Metern
-                Log.d("Berechnung", "Distanz zur Haltestelle " + stopName + ": " + distanceToStop + " Meter");
-                int distanceDelayInSeconds = (int) (distanceToStop / averageSpeedMps);
-                Log.d("Berechnung", "Distanzabweichung für Stop " + stopName + ": " + distanceDelayInSeconds);
-
-                // Gesamtabweichung berechnen
-                int totalDelayInSeconds = Math.abs(timeDelayInSeconds) + distanceDelayInSeconds;
-                Log.d("Berechnung", "Gesamtabweichung für Stop " + stopName + ": " + totalDelayInSeconds);
-
-                String delayText = String.format("Abweichung: %d Minuten", totalDelayInSeconds / 60);
-
-                // Detailtext hinzufügen
                 String detail = String.format(
-                        "Haltestelle: %s\nAnkunft: %s\nAbfahrt: %s\n%s",
+                        "Haltestelle: %s\n" +
+                                "Ankunft: %s\n" +
+                                "Abfahrt: %s\n" +
+                                "%s",
                         stopName,
                         stopTime.getArrivalTime(),
                         stopTime.getDepartureTime(),
