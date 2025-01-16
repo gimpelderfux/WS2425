@@ -123,8 +123,8 @@ public class MapUtils {
                     // Konvertiere die Abfahrtszeit in Sekunden
                     int departureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
 
-                    // Nur Abfahrten berücksichtigen, die ab jetzt gültig sind
-                    if (departureTimeInSeconds >= currentTimeInSeconds) {
+                    // Nur Abfahrten berücksichtigen, die ab jetzt vor 2 Stunden gültig sind
+                    if (departureTimeInSeconds >= (currentTimeInSeconds-7200)) {
                         sortedDepartures.add(new String[]{
                                 String.valueOf(departureTimeInSeconds), // Für Sortierung
                                 tripHeadsign,
