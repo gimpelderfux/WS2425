@@ -161,7 +161,6 @@ public class MapUtils {
     public interface MarkerClickListener {
         void onMarkerClick(Marker marker, Stops stop);
     }
-
     public static List<String> getTripDetailsWithDelays(GtfsData gtfsData, String tripId, GeoPoint currentLocation) {
         List<String> tripDetails = new ArrayList<>();
         int currentTimeInSeconds = getCurrentTimeInSeconds();
@@ -196,18 +195,30 @@ public class MapUtils {
         Log.d("Berechnung", "Nächstgelegene Haltestelle: " + closestStop.getName());
 
         // Berechne die Zeitabweichung nur für die nächstgelegene Haltestelle
-        int plannedDepartureTimeInSeconds = 0;
+        int plannedDepartureTimeInSecondsForClosestStop = 0;
         for (StopTimes stopTime : gtfsData.getStopTimes()) {
             if (stopTime.getTripId().equals(tripId) && stopTime.getStopId().equals(closestStop.getId())) {
-                plannedDepartureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
-                Log.d("Berechnung", "Abfahrtszeit in Sekunden für nächste Haltestelle " + closestStop.getName() + ": " + plannedDepartureTimeInSeconds);
+                plannedDepartureTimeInSecondsForClosestStop = parseTimeToSeconds(stopTime.getDepartureTime());
+                Log.d("Berechnung", "Abfahrtszeit in Sekunden für nächste Haltestelle " + closestStop.getName() + ": " + plannedDepartureTimeInSecondsForClosestStop);
                 break;
             }
         }
-        int timeDelayInSeconds = currentTimeInSeconds - plannedDepartureTimeInSeconds;
+        int timeDelayInSeconds = currentTimeInSeconds - plannedDepartureTimeInSecondsForClosestStop;
         Log.d("Berechnung", "Zeitabweichung für nächste Haltestelle " + closestStop.getName() + ": " + timeDelayInSeconds);
 
-        // Gib die gleiche Zeitabweichung für alle Haltestellen aus
+        String delayText;
+        if (timeDelayInSeconds > 0) {
+            delayText = String.format("Verspätung: %d Minuten", timeDelayInSeconds / 60);
+        } else if (timeDelayInSeconds < 0) {
+            delayText = String.format("Verfrühung: %d Minuten", Math.abs(timeDelayInSeconds) / 60);
+        } else {
+            delayText = "Pünktlich";
+        }
+
+        // Füge die Verspätung am Anfang der Liste hinzu
+        tripDetails.add(delayText);
+
+        // Gib die Haltestellendetails aus
         for (StopTimes stopTime : gtfsData.getStopTimes()) {
             if (stopTime.getTripId().equals(tripId)) {
                 Stops stop = gtfsData.getStops().stream()
@@ -223,24 +234,19 @@ public class MapUtils {
                 String stopName = stop.getName();
                 Log.d("Berechnung", "Haltestelle: " + stopName);
 
-                String delayText;
-                if (timeDelayInSeconds > 0) {
-                    delayText = String.format("Verspätung: %d Minuten", timeDelayInSeconds / 60);
-                } else if (timeDelayInSeconds < 0) {
-                    delayText = String.format("Verfrühung: %d Minuten", Math.abs(timeDelayInSeconds) / 60);
-                } else {
-                    delayText = "Pünktlich";
-                }
+                int plannedDepartureTimeInSeconds = parseTimeToSeconds(stopTime.getDepartureTime());
+                int newDepartureTimeInSeconds = plannedDepartureTimeInSeconds + timeDelayInSeconds;
+                String newDepartureTimeString = formatTimeFromSeconds(newDepartureTimeInSeconds);
 
                 String detail = String.format(
                         "Haltestelle: %s\n" +
                                 "Ankunft: %s\n" +
                                 "Abfahrt: %s\n" +
-                                "%s",
+                                "Voraussichtliche Abfahrt: %s",
                         stopName,
                         stopTime.getArrivalTime(),
                         stopTime.getDepartureTime(),
-                        delayText
+                        newDepartureTimeString
                 );
                 tripDetails.add(detail);
             }
@@ -251,6 +257,13 @@ public class MapUtils {
         }
 
         return tripDetails;
+    }
+
+    private static String formatTimeFromSeconds(int totalSeconds) {
+        int hours = (totalSeconds / 3600) % 24;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     // Hilfsmethode zum Konvertieren von HH:MM:SS in Sekunden
